@@ -104,6 +104,7 @@ namespace FreakyFashionTerminal
                                     {
                                         Console.WriteLine("Product not found");
                                         Thread.Sleep(2000);
+
                                     }
                                     else
                                     {
