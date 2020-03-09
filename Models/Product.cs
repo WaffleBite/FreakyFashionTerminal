@@ -5,6 +5,15 @@ namespace FreakyFashionTerminal.Models
 {
     class Product
     {
+        public Product(string name, string description, string artNumber, decimal price, Uri imageUrl)
+        {
+            Name = name;
+            Description = description;
+            ArtNumber = artNumber;
+            Price = price;
+            ImageUrl = imageUrl;
+        }
+
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
