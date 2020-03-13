@@ -111,7 +111,6 @@ namespace FreakyFashionTerminal
                         break;
                 }
             }
-
         }
 
         private static void AddProductToCategory()
@@ -123,18 +122,34 @@ namespace FreakyFashionTerminal
             Console.WriteLine("Category ID: ");
 
             Console.SetCursorPosition("Product ID: ".Length + 2, 1);
-            int productID = int.Parse(Console.ReadLine());
+            int productId = int.Parse(Console.ReadLine());
 
             Console.SetCursorPosition("Category ID: ".Length + 2, 2);
             int categoryId = int.Parse(Console.ReadLine());
 
-            Console.WriteLine("Is this correct? [Y]es  [N]o");
+            Console.WriteLine("\nIs this correct? [Y]es  [N]o");
 
             ConsoleKeyInfo keyPressed = Console.ReadKey(true);
 
             if (keyPressed.Key == ConsoleKey.Y)
+            {             
+                var response = httpClient.PostAsync($"category/{categoryId}/product/{productId}", new StringContent("")).Result;
+                
+                if (response.IsSuccessStatusCode) 
+                {
+                    Console.WriteLine("It did work!");
+                }
+                else
+                {
+                    Console.WriteLine("Did not work");
+                }
+                
+                Thread.Sleep(2000);
+            }
+            else if (keyPressed.Key == ConsoleKey.N)
             {
-
+                Console.Clear();
+                AddProductToCategory();
             }
         }
 
@@ -152,11 +167,11 @@ namespace FreakyFashionTerminal
             Console.SetCursorPosition("Image URL: ".Length + 2, 2);
             var imgUrl = new Uri(Console.ReadLine());
 
-            Console.WriteLine("Is this correct? [Y]es  [N]o");
+            Console.WriteLine("\nIs this correct? [Y]es  [N]o");
 
             ConsoleKeyInfo keyPressed = Console.ReadKey(true);
 
-            if(keyPressed.Key == ConsoleKey.Y)
+            if (keyPressed.Key == ConsoleKey.Y)
             {
                 var category = new Category(name, imgUrl);
                 var serializedCategory = JsonConvert.SerializeObject(category);
@@ -198,13 +213,13 @@ namespace FreakyFashionTerminal
             Console.SetCursorPosition(2, 2);
             Console.WriteLine("Description: ");
 
-            Console.SetCursorPosition(2, 3);
+            Console.SetCursorPosition(2, 5);
             Console.WriteLine("Art. Number: ");
 
-            Console.SetCursorPosition(2, 4);
+            Console.SetCursorPosition(2, 6);
             Console.WriteLine("Price: ");
 
-            Console.SetCursorPosition(2, 5);
+            Console.SetCursorPosition(2, 7);
             Console.WriteLine("Image URL: ");
 
             Console.SetCursorPosition("Name: ".Length + 2, 1);
@@ -213,16 +228,16 @@ namespace FreakyFashionTerminal
             Console.SetCursorPosition("Description: ".Length + 2, 2);
             string description = Console.ReadLine();
 
-            Console.SetCursorPosition("Art. Number: ".Length + 2, 3);
+            Console.SetCursorPosition("Art. Number: ".Length + 2, 5);
             string artNumber = Console.ReadLine();
 
-            Console.SetCursorPosition("Price: ".Length + 2, 4);
+            Console.SetCursorPosition("Price: ".Length + 2, 6);
             decimal price = decimal.Parse(Console.ReadLine());
 
-            Console.SetCursorPosition("Image URL: ".Length + 2, 5);
+            Console.SetCursorPosition("Image URL: ".Length + 2, 7);
             var imgUrl = new Uri(Console.ReadLine());
 
-            Console.WriteLine("Is this correct? [Y]es  [N]o");
+            Console.WriteLine("\nIs this correct? [Y]es  [N]o");
 
             ConsoleKeyInfo keyPressed = Console.ReadKey(true);
 
@@ -232,9 +247,9 @@ namespace FreakyFashionTerminal
                 var serializedProduct = JsonConvert.SerializeObject(product);
 
                 var data = new StringContent(
-               serializedProduct,
-               Encoding.UTF8,
-               "application/json");
+                serializedProduct,
+                Encoding.UTF8,
+                "application/json");
 
                 var response = httpClient.PostAsync("product", data).Result;
 
@@ -251,11 +266,12 @@ namespace FreakyFashionTerminal
 
                 Thread.Sleep(2000);
             }
-            else if (keyPressed.Key == ConsoleKey.N){
+            else if (keyPressed.Key == ConsoleKey.N)
+            {
                 Console.Clear();
                 AddProducts();
             }
-        }
+        } 
 
         private static void ListCategories()
         {
@@ -293,6 +309,8 @@ namespace FreakyFashionTerminal
             }
 
             Console.WriteLine("<Press [v] to view a category>");
+            Console.WriteLine("<Press [e] to edit a product>");
+            Console.WriteLine("<Press [d] to edit a product>");
 
             ConsoleKeyInfo keyPressed = Console.ReadKey(true);
 
@@ -319,6 +337,127 @@ namespace FreakyFashionTerminal
                     Console.WriteLine($"ImageUrl: {desCategory.Image}");
 
                     Console.ReadLine();
+                }
+            }
+
+            if (keyPressed.Key == ConsoleKey.E)
+            {
+                Console.Write("Edit (ID): ");
+                var chosenId = Console.ReadLine();
+                Console.Clear();
+
+                response = httpClient.GetAsync($"/api/category/{chosenId}").Result;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Category not found");
+                    Thread.Sleep(2000);
+                }
+                var json = response.Content.ReadAsStringAsync().Result;
+
+                var desCategory = JsonConvert.DeserializeObject<Category>(json);
+
+                Console.WriteLine($"ID: {desCategory.Id}");
+                Console.WriteLine($"Name: {desCategory.Name}");
+                Console.WriteLine($"Image URl: {desCategory.Image}");
+
+                Console.WriteLine(sb);
+
+                Console.WriteLine($"ID: {desCategory.Id}");
+
+                Console.SetCursorPosition(0, 4);
+                Console.WriteLine("Name: ");
+
+                Console.SetCursorPosition(0, 5);
+                Console.WriteLine("Image URL: ");
+
+                Console.SetCursorPosition("Name: ".Length + 0, 4);
+                string name = Console.ReadLine();
+
+                Console.SetCursorPosition("Image URL: ".Length + 0, 5);
+                var imageUrl = new Uri(Console.ReadLine());
+
+                Console.WriteLine("\nIs this correct? [Y]es  [N]o");
+                keyPressed = Console.ReadKey(true);
+
+                if (keyPressed.Key == ConsoleKey.Y)
+                {
+                    var updatedCategory = new Category(desCategory.Id, name, imageUrl);
+
+                    var serializedUpdatedCategory = JsonConvert.SerializeObject(updatedCategory);
+
+                    var content = new StringContent(serializedUpdatedCategory, Encoding.UTF8, "application/json");
+                    response = httpClient.PutAsync($"/api/category/{desCategory.Id}", content).Result;
+
+                    Console.Clear();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Category updated.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to update category");
+                    }
+
+                    Thread.Sleep(2000);
+                }
+                else if (keyPressed.Key == ConsoleKey.N)
+                {
+                    Console.Clear();
+                    ListCategories();
+                }
+            }
+            
+            if (keyPressed.Key == ConsoleKey.D)
+            {
+                Console.Write("Delete (ID): ");
+                var chosenId = Console.ReadLine();
+                Console.Clear();
+
+                response = httpClient.GetAsync($"/api/category/{chosenId}").Result;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Category not found");
+                    Thread.Sleep(2000);
+                }
+                var json = response.Content.ReadAsStringAsync().Result;
+
+                var desCategory = JsonConvert.DeserializeObject<Category>(json);
+
+                Console.WriteLine($"ID: {desCategory.Id}");
+                Console.WriteLine($"Name: {desCategory.Name}");
+                Console.WriteLine($"Image URl: {desCategory.Image}");
+
+                Console.WriteLine(sb);
+
+                Console.WriteLine("\nDelete category? [Y]es  [N]o");
+                keyPressed = Console.ReadKey(true);
+
+                if (keyPressed.Key == ConsoleKey.Y)
+                {
+                    response = httpClient.DeleteAsync($"category/{chosenId}")
+                        .GetAwaiter()
+                        .GetResult();
+
+                    Console.Clear();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Category deleted");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed!");
+                    }
+
+                    Thread.Sleep(2000);
+                }
+                else if (keyPressed.Key == ConsoleKey.N)
+                {
+                    Console.Clear();
+                    ListCategories();
                 }
             }
         }
@@ -357,13 +496,14 @@ namespace FreakyFashionTerminal
                 Console.WriteLine(productName);
             }
 
-            Console.WriteLine("<Press [v] to view a product>");
+            Console.WriteLine("\n<Press [v] to view a product>");
+            Console.WriteLine("<Press [e] to edit a product>");
+            Console.WriteLine("<Press [d] to edit a product>");
 
             ConsoleKeyInfo keyPressed = Console.ReadKey(true);
 
-            if (keyPressed.Key == ConsoleKey.V)
+            if (keyPressed.Key == ConsoleKey.V)  // view
             {
-
                 Console.Write("View (ID): ");
                 var chosenId = Console.ReadLine();
                 Console.Clear();
@@ -389,12 +529,147 @@ namespace FreakyFashionTerminal
                     {
                         Console.WriteLine($"\t{cat.Category.Name}");
                     }
-
-
                     Console.ReadLine();
                 }
             }
 
+            if (keyPressed.Key == ConsoleKey.E)  // edit
+            {
+                Console.Write("Edit (ID): ");
+                var chosenId = Console.ReadLine();
+                Console.Clear();
+
+                response = httpClient.GetAsync($"/api/product/{chosenId}").Result;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Product not found");
+                    Thread.Sleep(2000);
+                }
+                var json = response.Content.ReadAsStringAsync().Result;
+
+                var desProduct = JsonConvert.DeserializeObject<Product>(json);
+
+                Console.WriteLine($"ID: {desProduct.Id}");
+                Console.WriteLine($"Name: {desProduct.Name}");
+                Console.WriteLine($"Description: {desProduct.Description}");
+                Console.WriteLine($"Price: {desProduct.Price}");
+                Console.WriteLine($"Image URl: {desProduct.ImageUrl}");
+
+                Console.WriteLine(sb);
+
+                Console.WriteLine($"ID: {desProduct.Id}");
+
+                Console.SetCursorPosition(0, 7);
+                Console.WriteLine("Name: ");
+
+                Console.SetCursorPosition(0, 8);
+                Console.WriteLine("Description: ");
+
+                Console.SetCursorPosition(0, 9);
+                Console.WriteLine("Price: ");
+
+                Console.SetCursorPosition(0, 10);
+                Console.WriteLine("Image URL: ");
+
+                Console.SetCursorPosition("Name: ".Length + 0, 7);
+                string name = Console.ReadLine();
+
+                Console.SetCursorPosition("Description: ".Length + 0, 8);
+                string description = Console.ReadLine();
+
+                Console.SetCursorPosition("Price: ".Length + 0, 9);
+                decimal price = decimal.Parse(Console.ReadLine());
+
+                Console.SetCursorPosition("Image URL: ".Length + 0, 10);
+                var imageUrl = new Uri(Console.ReadLine());
+
+                Console.WriteLine("\nIs this correct? [Y]es  [N]o");
+                keyPressed = Console.ReadKey(true);
+
+                if (keyPressed.Key == ConsoleKey.Y)
+                {
+                    var updatedProduct = new Product(desProduct.Id, name, description, price, imageUrl);
+
+                    var serializedUpdatedProduct = JsonConvert.SerializeObject(updatedProduct);
+
+                    var content = new StringContent(serializedUpdatedProduct, Encoding.UTF8, "application/json");
+                    response = httpClient.PutAsync($"/api/product/{desProduct.Id}", content).Result;
+
+                    Console.Clear();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Product updated.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to update product");
+                    }
+
+                    Thread.Sleep(2000);
+                }
+                else if(keyPressed.Key == ConsoleKey.N)
+                {
+                    Console.Clear();
+                    ListProducts();
+                }               
+            } 
+
+            if (keyPressed.Key == ConsoleKey.D) // delete
+            {
+                Console.Write("Delete (ID): ");
+                var chosenId = Console.ReadLine();
+                Console.Clear();
+
+                response = httpClient.GetAsync($"/api/product/{chosenId}").Result;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Product not found");
+                    Thread.Sleep(2000);
+                }
+                var json = response.Content.ReadAsStringAsync().Result;
+
+                var desProduct = JsonConvert.DeserializeObject<Product>(json);
+
+                Console.WriteLine($"ID: {desProduct.Id}");
+                Console.WriteLine($"Name: {desProduct.Name}");
+                Console.WriteLine($"Description: {desProduct.Description}");
+                Console.WriteLine($"Price: {desProduct.Price}");
+                Console.WriteLine($"Image URl: {desProduct.ImageUrl}");
+
+                Console.WriteLine(sb);
+
+                Console.WriteLine("\nDelete product? [Y]es  [N]o");
+                keyPressed = Console.ReadKey(true);
+
+                if (keyPressed.Key == ConsoleKey.Y)
+                {
+                    // TODO: Make HTTP DELETE request to delete resource...
+                    response = httpClient.DeleteAsync($"product/{chosenId}")
+                        .GetAwaiter()
+                        .GetResult();
+
+                    Console.Clear();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Product deleted");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed!");
+                    }
+
+                    Thread.Sleep(2000);
+                }
+                else if (keyPressed.Key == ConsoleKey.N)
+                {
+                    Console.Clear();
+                    ListProducts();
+                }
+            }
         }
     }
 }
